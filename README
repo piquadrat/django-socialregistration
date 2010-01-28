@@ -25,12 +25,12 @@ Configuration
 Facebook Connect
 ----------------
 #. Add *FACEBOOK_API_KEY* and *FACEBOOK_SECRET_KEY* to your settings file
-representing the keys you were given by Facebook.
+   representing the keys you were given by Facebook.
 #. Add *socialregistration.auth.FacebookAuth* to *AUTHENTICATION_BACKENDS* in your settings file.
 #. Add 'facebook.djangofb.FacebookMiddleware' to *MIDDLEWARE_CLASSES* in your settings file.
-   -> http://wiki.developers.facebook.com/index.php/User:PyFacebook_Tutorial#Add_the_middleware
+   See http://wiki.developers.facebook.com/index.php/User:PyFacebook_Tutorial#Add_the_middleware
 
-#.  Add tags to your template file:
+#.  Add tags to your template file: ::
 
     {% load facebook_tags %}
     {% facebook_button %}
@@ -42,7 +42,7 @@ representing the keys you were given by Facebook.
 Twitter
 -------
 #. Add the following variables to your *settings.py* file with the values you
-were given by Twitter:
+   were given by Twitter: ::
 
     TWITTER_CONSUMER_KEY
     TWITTER_CONSUMER_SECRET_KEY
@@ -52,7 +52,8 @@ were given by Twitter:
 
 #. Add *socialregistration.auth.TwitterAuth* to *AUTHENTICATION_BACKENDS* in your settings file.
 
-#. Add tags to your template file:
+#. Add tags to your template file: ::
+
     {% load twitter_tags %}
     {% twitter_button %}
 
@@ -68,17 +69,32 @@ on Twitter and FriendFeed how to hook in more OAuth based services.
 OpenID
 ------
 #. Add *socialregistration.auth.OpenIDAuth* to *AUTHENTICATION_BACKENDS* in your settings file.
-#. Add tags to your template file:
+#. Add tags to your template file: ::
+
     {% load openid_tags %}
     {% openid_form %}
+
+If you wish to use the OpenID extensions `Simple Registration <http://openid.net/specs/openid-simple-registration-extension-1_0.html>`_
+(*sreg*) and `Attribute Exchange <http://openid.net/specs/openid-attribute-exchange-1_0.html>`_
+(*ax*), you have to define *OPENID_REGISTRATION_FIELDS* in your settings, e.g.: ::
+
+    OPENID_REGISTRATION_FIELDS = {'required': ['email', 'nickname']}
+
+Currently, only the *sreg*-fields *email*, *nickname* and their equivalents from *ax*
+are picked up by socialregistration. If the OpenID provider returns values for
+these fields, they are automatically used as inital values for the setup form.
+
+.. note:: setting a field to *required* doesn't guarantee that the OpenID provider
+   will return a value for that field. On the other hand, some providers
+   (e.g. Google) only return a value if the field *is* required.    
 
 Logging users out
 -----------------
 You can use the standard {% url auth_logout %} url to log users out of Django.
 Please note that this will not log users out of third party sites though.
-When using Facebook Connect, it is recommended to follow the FBConnect developer
-wiki ->
-    http://wiki.developers.facebook.com/index.php/Connect/Authorization_Websites#Logging_Out_Users
+When using Facebook Connect, it is recommended to follow the `FBConnect developer
+wiki <http://wiki.developers.facebook.com/index.php/Connect/Authorization_Websites#Logging_Out_Users>`_: ::
+
     <a href="#" onclick="FB.Connect.logoutAndRedirect('{% url auth_logout %}')">Logout</a>
 
 Other Information

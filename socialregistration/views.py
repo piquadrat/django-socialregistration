@@ -49,9 +49,15 @@ def setup(request, template='socialregistration/setup.html',
     if not getattr(settings, 'SOCIAL_GENERATE_USERNAME', False):
         # User can pick own username
         if not request.method == "POST":
+            initial = {
+               'username': request.session.pop('social_suggested_nickname',
+                                               request.session.pop('social_suggested_username'), ''),
+               'email': request.session.pop('social_suggested_email', ''),
+            }
             form = form_class(
                 request.session['socialregistration_user'],
                 request.session['socialregistration_profile'],
+                initial=initial,
             )
         else:
             form = form_class(
@@ -97,8 +103,8 @@ def setup(request, template='socialregistration/setup.html',
 def facebook_login(request, template='socialregistration/facebook.html',
     extra_context=dict()):
     """
-    View to handle the Facebook login 
-    """
+View to handle the Facebook login
+"""
     if not request.facebook.check_session(request):
         extra_context.update(
             dict(error=FB_ERROR)
@@ -112,13 +118,14 @@ def facebook_login(request, template='socialregistration/facebook.html',
     if user is None:
         request.session['socialregistration_user'] = User()
         fb_profile = request.facebook.users.getInfo([request.facebook.uid], ['name', 'pic_square'])[0]
+        request.session['social_suggested_username'] = ''.join(fb_profile['name'].split(' ')[:2])
         request.session['socialregistration_profile'] = FacebookProfile(
             uid=request.facebook.uid,
             )
         request.session['next'] = _get_next(request)
-
+ 
         return HttpResponseRedirect(reverse('socialregistration_setup'))
-
+ 
     login(request, user)
     
     return HttpResponseRedirect(_get_next(request))
@@ -170,13 +177,13 @@ def twitter(request):
     )
     
     user_info = client.get_user_info()
-
     user = authenticate(twitter_id=user_info['id'])
     
     if user is None:
         profile = TwitterProfile(twitter_id=user_info['id'],
                                  )
         user = User()
+        request.session['social_suggested_username'] = user_info['screen_name']
         request.session['socialregistration_profile'] = profile
         request.session['socialregistration_user'] = user
         request.session['next'] = _get_next(request)
@@ -255,7 +262,7 @@ def openid_callback(request, template='socialregistration/openid.html',
         ),
         request.session.get('openid_provider')
     )
-    
+
     if client.is_valid():
         user = authenticate(identity=request.GET.get('openid.claimed_id'))
         if user is None:
@@ -263,11 +270,13 @@ def openid_callback(request, template='socialregistration/openid.html',
             request.session['socialregistration_profile'] = OpenIDProfile(
                 identity=request.GET.get('openid.claimed_id')
             )
+            for key, value in getattr(client, 'registration_data', {}).items():
+                request.session['social_suggested_%s' % key] = value
             return HttpResponseRedirect(reverse('socialregistration_setup'))
         else:
             login(request, user)
-            return HttpResponseRedirect(_get_next(request))            
-    
+            return HttpResponseRedirect(_get_next(request))
+
     return render_to_response(
         template,
         dict(),
