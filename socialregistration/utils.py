@@ -242,7 +242,7 @@ class OAuthClient(oauth.OAuthClient):
         more than one single oauth provider's access key in the session 
         """
         if getattr(self, '_prefix', None) is None:
-            self._prefix = urllib2.urlparse.urlparse(self.request_token_url).netloc
+            self._prefix = urllib2.urlparse.urlparse(self.request_token_url)[1] # netloc
         return self._prefix
     
     @property
@@ -318,7 +318,7 @@ class OAuth(object):
         Create a prefix for the token so we can hold multiple different oauth
         tokens in the session 
         """
-        return urllib2.urlparse.urlparse(self.request_token_url).netloc
+        return urllib2.urlparse.urlparse(self.request_token_url)[1]
 
     @property
     def access_token(self):
