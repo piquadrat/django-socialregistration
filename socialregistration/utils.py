@@ -20,18 +20,24 @@ from openid.association import Association as OIDAssociation
 from openid.extensions import sreg as oid_sreg,\
                               ax as oid_ax
 
-from django.http import HttpResponseRedirect, HttpResponseServerError
+from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.utils.translation import gettext as _
 
+from django.conf import settings
 from django.utils import simplejson
 
 from django.contrib.sites.models import Site
-from django.contrib.auth.models import User
-from django.conf import settings
 
 from socialregistration.models import OpenIDStore as OpenIDStoreModel, OpenIDNonce
 
+USE_HTTPS = bool(getattr(settings, 'SOCIALREGISTRATION_USE_HTTPS', False))
+
+def _https():
+    if USE_HTTPS:
+        return 's'
+    else:
+        return ''
 
 class OpenIDStore(OIDStore):
     max_nonce_age = 6 * 60 * 60
@@ -136,7 +142,7 @@ class OpenID(object):
                                                        alias=attribute))
             auth_request.addExtension(ax_request)
         redirect_url = auth_request.redirectURL(
-            'http://%s/' % Site.objects.get_current().domain,
+            'http%s://%s/' % (_https(), Site.objects.get_current().domain),
             self.return_to
         )
         return HttpResponseRedirect(redirect_url)
@@ -144,7 +150,8 @@ class OpenID(object):
     def complete(self):
         self.result = self.consumer.complete(
             dict(self.request.GET.items()),
-            'http://%s%s' % (Site.objects.get_current(), self.request.path)
+            'http%s://%s%s' % (_https(), Site.objects.get_current(),
+                self.request.path)
         )
         if self.result.status == openid.SUCCESS and self.sreg:
             self._sreg_response = oid_sreg.SRegResponse.fromSuccessResponse(self.result)
@@ -211,7 +218,7 @@ class OAuthClient(oauth.OAuthClient):
             oauth_token = simplejson.loads(response)['oauth_token']
             oauth_token_secret = simplejson.loads(response)['oauth_token_secret']
 
-            response = 'oauth_token='+oauth_token+'&oauth_token_secret='+oauth_token_secret
+            response = 'oauth_token=' + oauth_token + '&oauth_token_secret=' + oauth_token_secret
             
         return oauth.OAuthToken.from_string(response)
     
@@ -232,7 +239,7 @@ class OAuthClient(oauth.OAuthClient):
             oauth_token = xml.getElementsByTagName('oauth_token')[0].childNodes[0].nodeValue
             oauth_token_secret = xml.getElementsByTagName('oauth_token_secret')[0].childNodes[0].nodeValue
   
-            response = 'oauth_token='+oauth_token+'&oauth_token_secret='+oauth_token_secret
+            response = 'oauth_token=' + oauth_token + '&oauth_token_secret=' + oauth_token_secret
         
         return oauth.OAuthToken.from_string(response)
     
