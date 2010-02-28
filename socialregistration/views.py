@@ -327,8 +327,8 @@ def openid_callback(request, template='socialregistration/openid.html',
             )
 
         login(request, user)
-        return HttpResponseRedirect(_get_next(request))
-
+        return HttpResponseRedirect(_get_next(request))            
+    
     return render_to_response(
         template,
         dict(),
